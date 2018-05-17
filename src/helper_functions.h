@@ -48,6 +48,14 @@ struct LandmarkObs {
 	double y;			// Local (vehicle coordinates) y position of landmark observation [m]
 };
 
+inline double gaussian(double x,double y,double mu_x,double mu_y,double sigma_x,double sigma_y){
+	double a = - ( (x-mu_x) * (x-mu_x) / (2*sigma_x*sigma_x) + (y-mu_y) * (y-mu_y) / (2*sigma_y*sigma_y) );
+	double b = exp(a);
+	return b/(2*M_PI*sigma_x*sigma_y);
+}
+
+
+
 /*
  * Computes the Euclidean distance between two 2D points.
  * @param (x1,y1) x and y coordinates of first point
