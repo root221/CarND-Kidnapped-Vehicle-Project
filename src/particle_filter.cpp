@@ -31,7 +31,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta,std[2]);
 
 	// TODO  Set the number of particles
-	num_particles = 1000;
+	num_particles = 10;
 
 	for(int i=0; i<num_particles; i++){
 		Particle particle;
@@ -85,14 +85,18 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//   implement this method and use it as a helper during the updateWeights phase.
 	for(int i = 0; i< observations.size(); i++){
 		double min_dist = dist(predicted[0].x,predicted[0].y,observations[i].x,observations[i].y);
+		observations[i].id = predicted[0].id;
+
 		for(int j = 1; j < predicted.size(); j++){
 			double distance = dist(predicted[j].x,predicted[j].y,observations[i].x,observations[i].y);
+			
 			if(min_dist > distance){
 				min_dist = distance;
 				observations[i].id = predicted[j].id;
 			}
 
 		}
+		cout << observations[i].id << endl;
 	}
 
 
@@ -126,30 +130,45 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			
 			observations_in_map.push_back(landmark);
 		}
-
+		cout << observations_in_map.size() << endl;
 		std::vector<LandmarkObs> landmarks;
-		for(int i=0; i<map_landmarks.landmark_list.size();i++){
-			LandmarkObs landmark;
-			landmark.x = map_landmarks.landmark_list[i].x_f;
-			landmark.y = map_landmarks.landmark_list[i].y_f;
-			landmark.id = i;
-			if(dist(particle_x,particle_y,landmark.x, landmark.y) <= sensor_range)
-				landmarks.push_back(landmark);
-		}
 		
+		for(int k=0; k<map_landmarks.landmark_list.size();k++){
+			LandmarkObs landmark;
+			landmark.x = map_landmarks.landmark_list[k].x_f;
+			landmark.y = map_landmarks.landmark_list[k].y_f;
+			if(dist(particle_x,particle_y,landmark.x, landmark.y) <= sensor_range){
+				landmark.id = landmarks.size();
+				landmarks.push_back(landmark);
+			}
+			
+		}
+		for(int k=0;k<landmarks.size();k++)
+			cout << landmarks[k].id << endl;
+
 		dataAssociation(landmarks,observations_in_map);
 	
 		double weight = 1.0;
-		for(int i=0;i<observations.size();i++){
+		for(int k=0;k<observations.size();k++){
+			cout << observations_in_map[k].id << endl;
 			double mu_x, mu_y;
-			mu_x = landmarks[observations[i].id].x;
-			mu_y = landmarks[observations[i].id].y;
-			weight *= gaussian(observations[i].x,observations[i].y,mu_x,mu_y,std_landmark[0],std_landmark[1]);
+			mu_x = landmarks[observations_in_map[k].id].x;
+			mu_y = landmarks[observations_in_map[k].id].y;
+			//cout << mu_x << " " << mu_y << endl;
+			weight *= gaussian(observations_in_map[k].x,observations_in_map[k].y,mu_x,mu_y,std_landmark[0],std_landmark[1]);
 		}
 
 		weights.push_back(weight);
 	}
 
+	double s=0;
+	for(int i=0; i<weights.size(); i++){
+		s += weights[i];
+	}
+	for(int i=0; i<weights.size();i++){
+		weights[i] = weights[i] / s;
+		particles[i].weight = weights[i]; 
+	}
 
 }
 
